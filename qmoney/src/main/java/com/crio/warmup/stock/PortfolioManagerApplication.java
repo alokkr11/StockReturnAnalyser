@@ -9,20 +9,13 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.ThreadContext;
-import org.springframework.web.client.RestTemplate;
 
 
 public class PortfolioManagerApplication {
@@ -46,7 +39,19 @@ public class PortfolioManagerApplication {
 
   public static List<String> mainReadFile(String[] args) throws IOException, URISyntaxException {
 
-     return Collections.emptyList();
+    File inputFile = resolveFileFromResources(args[0]);
+
+    ObjectMapper oM = getObjectMapper();
+
+    PortfolioTrade[] portfolioTrades = oM.readValue(inputFile,PortfolioTrade[].class);
+
+    ArrayList<String> symbols = new ArrayList<>();
+
+    for(PortfolioTrade p : portfolioTrades){
+      symbols.add(p.getSymbol());
+    }
+
+     return symbols;
   }
 
 
@@ -117,10 +122,10 @@ public class PortfolioManagerApplication {
   public static List<String> debugOutputs() {
 
      String valueOfArgument0 = "trades.json";
-     String resultOfResolveFilePathArgs0 = "";
-     String toStringOfObjectMapper = "";
-     String functionNameFromTestFileInStackTrace = "";
-     String lineNumberFromTestFileInStackTrace = "";
+     String resultOfResolveFilePathArgs0 = "/home/crio-user/workspace/alok-kumar-criodo-co-ME_QMONEY_V2/qmoney/bin/main/trades.json";
+     String toStringOfObjectMapper = "com.fasterxml.jackson.databind.ObjectMapper@1573f9fc";
+     String functionNameFromTestFileInStackTrace = "org.opentest4j.AssertionFailedError: expected: <[AAPL, MSFT, GOOGL]> but was: <[]>";
+     String lineNumberFromTestFileInStackTrace = "29";
 
 
     return Arrays.asList(new String[]{valueOfArgument0, resultOfResolveFilePathArgs0,
