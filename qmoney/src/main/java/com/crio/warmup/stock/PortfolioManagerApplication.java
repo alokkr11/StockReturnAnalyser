@@ -185,7 +185,7 @@ public class PortfolioManagerApplication {
 
     for (PortfolioTrade p : PortfolioTrades) {
       String uri =
-          prepareUrl(p, LocalDate.parse(args[1]), "837ccaae4dabe76554a1e06d3d7b349e5b1605d6");
+          prepareUrl(p, LocalDate.parse(args[1]), getToken());
       TiingoCandle[] results = restTemplate.getForObject(uri, TiingoCandle[].class);
 
       if (results != null) {
