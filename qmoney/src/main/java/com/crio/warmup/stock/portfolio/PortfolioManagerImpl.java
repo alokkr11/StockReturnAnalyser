@@ -9,13 +9,10 @@ import com.crio.warmup.stock.dto.Candle;
 import com.crio.warmup.stock.dto.PortfolioTrade;
 import com.crio.warmup.stock.dto.TiingoCandle;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -92,17 +89,19 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
       List<Candle> candlesList =
           getStockQuote(portfolioTrade.getSymbol(), portfolioTrade.getPurchaseDate(), endDate);
+      if (candlesList != null) {
+        Double buyPrice = candlesList.get(0).getOpen();
+        Double sellPrice = candlesList.get(candlesList.size() - 1).getClose();
+        LocalDate sellDate = candlesList.get(candlesList.size() - 1).getDate();
 
-      Double buyPrice = candlesList.get(0).getOpen();
-      Double sellPrice = candlesList.get(candlesList.size() - 1).getClose();
-      LocalDate sellDate = candlesList.get(candlesList.size() - 1).getDate();
+        annualizedReturnsList
+            .add(calculateAnnualizedReturns(sellDate, portfolioTrade, buyPrice, sellPrice));
+      }
 
-      annualizedReturnsList
-          .add(calculateAnnualizedReturns(sellDate, portfolioTrade, buyPrice, sellPrice));
 
     }
 
-    Collections.sort(annualizedReturnsList,getComparator());
+    Collections.sort(annualizedReturnsList, getComparator());
     return annualizedReturnsList;
   }
 
@@ -114,4 +113,7 @@ public class PortfolioManagerImpl implements PortfolioManager {
     Double annualized_returns = Math.pow((1 + totalReturn), (1 / years)) - 1;
     return new AnnualizedReturn(trade.getSymbol(), annualized_returns, totalReturn);
   }
+
+
+
 }

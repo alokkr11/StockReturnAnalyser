@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class TotalReturnsDto {
 
   private String symbol;
+
   public TotalReturnsDto() {}
 
   @JsonProperty("close")

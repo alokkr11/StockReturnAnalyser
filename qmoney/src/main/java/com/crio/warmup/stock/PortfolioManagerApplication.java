@@ -5,7 +5,6 @@ package com.crio.warmup.stock;
 import com.crio.warmup.stock.dto.*;
 import com.crio.warmup.stock.log.UncaughtExceptionHandler;
 import com.crio.warmup.stock.portfolio.PortfolioManager;
-import com.crio.warmup.stock.portfolio.PortfolioManagerFactory;
 import com.crio.warmup.stock.portfolio.PortfolioManagerImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -24,8 +23,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.web.client.RestTemplate;
 
@@ -184,8 +181,7 @@ public class PortfolioManagerApplication {
     List<TotalReturnsDto> totalReturnsDtos = new ArrayList<>();
 
     for (PortfolioTrade p : PortfolioTrades) {
-      String uri =
-          prepareUrl(p, LocalDate.parse(args[1]), getToken());
+      String uri = prepareUrl(p, LocalDate.parse(args[1]), getToken());
       TiingoCandle[] results = restTemplate.getForObject(uri, TiingoCandle[].class);
 
       if (results != null) {
@@ -326,7 +322,7 @@ public class PortfolioManagerApplication {
     LocalDate endDate = LocalDate.parse(args[1]);
     String contents = readFileAsString(file);
     ObjectMapper objectMapper = getObjectMapper();
-    PortfolioTrade[] portfolioTrades = objectMapper.readValue(file,PortfolioTrade[].class);
+    PortfolioTrade[] portfolioTrades = objectMapper.readValue(file, PortfolioTrade[].class);
     PortfolioManager portfolioManager = new PortfolioManagerImpl();
     return portfolioManager.calculateAnnualizedReturn(Arrays.asList(portfolioTrades), endDate);
   }
