@@ -4,10 +4,14 @@ package com.crio.warmup.stock;
 
 import com.crio.warmup.stock.dto.*;
 import com.crio.warmup.stock.log.UncaughtExceptionHandler;
+import com.crio.warmup.stock.portfolio.PortfolioManager;
+import com.crio.warmup.stock.portfolio.PortfolioManagerFactory;
+import com.crio.warmup.stock.portfolio.PortfolioManagerImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -138,11 +142,9 @@ public class PortfolioManagerApplication {
   public static List<String> debugOutputs() {
 
     String valueOfArgument0 = "trades.json";
-    String resultOfResolveFilePathArgs0 =
-        "trades.json";
+    String resultOfResolveFilePathArgs0 = "trades.json";
     String toStringOfObjectMapper = "ObjectMapper";
-    String functionNameFromTestFileInStackTrace =
-        "mainReadFile";
+    String functionNameFromTestFileInStackTrace = "mainReadFile";
     String lineNumberFromTestFileInStackTrace = "29";
 
 
@@ -242,7 +244,7 @@ public class PortfolioManagerApplication {
   }
 
   public static String getToken() {
-    return "0597d56bf57ee8196f6f36f47a1849e078da82cc";
+    return "837ccaae4dabe76554a1e06d3d7b349e5b1605d6";
   }
 
 
@@ -260,22 +262,28 @@ public class PortfolioManagerApplication {
   public static List<AnnualizedReturn> mainCalculateSingleReturn(String[] args)
       throws IOException, URISyntaxException {
 
-        List<AnnualizedReturn> annualizedReturns = new ArrayList<>();
-        List<PortfolioTrade> portfolioTrades = readTradesFromJson(args[0]);
-        for (PortfolioTrade portfolioTrade : portfolioTrades) {
-          Double buyPrice = getOpeningPriceOnStartDate(fetchCandles(portfolioTrade, portfolioTrade.getPurchaseDate(), getToken()));
-          Double sellPrice = getClosingPriceOnEndDate(fetchCandles(portfolioTrade, LocalDate.parse(args[1]), getToken()));
-          annualizedReturns.add(calculateAnnualizedReturns(LocalDate.parse(args[1]), portfolioTrade, buyPrice, sellPrice));
-        }
+    List<AnnualizedReturn> annualizedReturns = new ArrayList<>();
+    List<PortfolioTrade> portfolioTrades = readTradesFromJson(args[0]);
+    for (PortfolioTrade portfolioTrade : portfolioTrades) {
+      Double buyPrice = getOpeningPriceOnStartDate(
+          fetchCandles(portfolioTrade, portfolioTrade.getPurchaseDate(), getToken()));
+      Double sellPrice = getClosingPriceOnEndDate(
+          fetchCandles(portfolioTrade, LocalDate.parse(args[1]), getToken()));
+      annualizedReturns.add(calculateAnnualizedReturns(LocalDate.parse(args[1]), portfolioTrade,
+          buyPrice, sellPrice));
+    }
     Collections.sort(annualizedReturns, new Comparator<AnnualizedReturn>() {
 
       @Override
       public int compare(AnnualizedReturn a1, AnnualizedReturn a2) {
-        if(a1.getAnnualizedReturn()>a2.getAnnualizedReturn()) return -1;
-        else if(a1.getAnnualizedReturn()<a2.getAnnualizedReturn()) return 1;
-        else return 0;
+        if (a1.getAnnualizedReturn() > a2.getAnnualizedReturn())
+          return -1;
+        else if (a1.getAnnualizedReturn() < a2.getAnnualizedReturn())
+          return 1;
+        else
+          return 0;
       }
-      
+
     });
     return annualizedReturns;
   }
@@ -303,6 +311,34 @@ public class PortfolioManagerApplication {
 
 
 
+  // TODO: CRIO_TASK_MODULE_REFACTOR
+  // Once you are done with the implementation inside PortfolioManagerImpl and
+  // PortfolioManagerFactory, create PortfolioManager using PortfolioManagerFactory.
+  // Refer to the code from previous modules to get the List<PortfolioTrades> and endDate, and
+  // call the newly implemented method in PortfolioManager to calculate the annualized returns.
+
+  // Note:
+  // Remember to confirm that you are getting same results for annualized returns as in Module 3.
+
+  public static List<AnnualizedReturn> mainCalculateReturnsAfterRefactor(String[] args)
+      throws Exception {
+    String file = args[0];
+    LocalDate endDate = LocalDate.parse(args[1]);
+    String contents = readFileAsString(file);
+    ObjectMapper objectMapper = getObjectMapper();
+    PortfolioTrade[] portfolioTrades = objectMapper.readValue(file,PortfolioTrade[].class);
+    PortfolioManager portfolioManager = new PortfolioManagerImpl();
+    return portfolioManager.calculateAnnualizedReturn(Arrays.asList(portfolioTrades), endDate);
+  }
+
+
+  private static String readFileAsString(String filename)
+      throws UnsupportedEncodingException, IOException, URISyntaxException {
+    return new String(Files.readAllBytes(resolveFileFromResources(filename).toPath()), "UTF-8");
+  }
+
+
+
   public static void main(String[] args) throws Exception {
     Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler());
     ThreadContext.put("runId", UUID.randomUUID().toString());
@@ -316,6 +352,9 @@ public class PortfolioManagerApplication {
 
     printJsonObject(mainCalculateSingleReturn(args));
 
+
+
+    printJsonObject(mainCalculateReturnsAfterRefactor(args));
   }
 }
 
