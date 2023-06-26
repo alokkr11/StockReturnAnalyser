@@ -1,13 +1,11 @@
 
 package com.crio.warmup.stock.portfolio;
 
-import static java.time.temporal.ChronoUnit.DAYS;
-import static java.time.temporal.ChronoUnit.SECONDS;
-
 import com.crio.warmup.stock.dto.AnnualizedReturn;
 import com.crio.warmup.stock.dto.Candle;
 import com.crio.warmup.stock.dto.PortfolioTrade;
 import com.crio.warmup.stock.dto.TiingoCandle;
+import com.crio.warmup.stock.quotes.StockQuotesService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -16,18 +14,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.springframework.web.client.RestTemplate;
 
 public class PortfolioManagerImpl implements PortfolioManager {
 
 
   private RestTemplate restTemplate;
+  private StockQuotesService stockQuotesService;
 
   // Caution: Do not delete or modify the constructor, or else your build will break!
   // This is absolutely necessary for backward compatibility
@@ -54,6 +47,17 @@ public class PortfolioManagerImpl implements PortfolioManager {
   public PortfolioManagerImpl() {}
 
 
+  public PortfolioManagerImpl(RestTemplate restTemplate, StockQuotesService stockQuotesService) {
+    this.restTemplate = restTemplate;
+    this.stockQuotesService = stockQuotesService;
+  }
+
+  public PortfolioManagerImpl(StockQuotesService stockQuotesService) {
+    // this.restTemplate = restTemplate;
+    this.stockQuotesService = stockQuotesService;
+  }
+
+
   private Comparator<AnnualizedReturn> getComparator() {
     return Comparator.comparing(AnnualizedReturn::getAnnualizedReturn).reversed();
   }
@@ -73,7 +77,7 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
   protected String buildUri(String symbol, LocalDate startDate, LocalDate endDate) {
     String uriTemplate = "https://api.tiingo.com/tiingo/daily/" + symbol + "/prices?" + "startDate="
-        + startDate + "&endDate=" + endDate + "&token=0597d56bf57ee8196f6f36f47a1849e078da82cc";
+        + startDate + "&endDate=" + endDate + "&token=" + getToken();
     return uriTemplate;
   }
 
@@ -87,8 +91,8 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
     for (PortfolioTrade portfolioTrade : portfolioTrades) {
 
-      List<Candle> candlesList =
-          getStockQuote(portfolioTrade.getSymbol(), portfolioTrade.getPurchaseDate(), endDate);
+      List<Candle> candlesList = stockQuotesService.getStockQuote(portfolioTrade.getSymbol(),
+          portfolioTrade.getPurchaseDate(), endDate);
       if (candlesList != null) {
         Double buyPrice = candlesList.get(0).getOpen();
         Double sellPrice = candlesList.get(candlesList.size() - 1).getClose();
@@ -114,6 +118,16 @@ public class PortfolioManagerImpl implements PortfolioManager {
     return new AnnualizedReturn(trade.getSymbol(), annualized_returns, totalReturn);
   }
 
+  public static String getToken() {
+    return "837ccaae4dabe76554a1e06d3d7b349e5b1605d6";
+  }
 
+
+
+  // ¶TODO: CRIO_TASK_MODULE_ADDITIONAL_REFACTOR
+  // Modify the function #getStockQuote and start delegating to calls to
+  // stockQuoteService provided via newly added constructor of the class.
+  // You also have a liberty to completely get rid of that function itself, however, make sure
+  // that you do not delete the #getStockQuote function.
 
 }

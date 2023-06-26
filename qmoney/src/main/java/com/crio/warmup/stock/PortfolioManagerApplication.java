@@ -240,7 +240,7 @@ public class PortfolioManagerApplication {
   }
 
   public static String getToken() {
-    return "0597d56bf57ee8196f6f36f47a1849e078da82cc";
+    return "837ccaae4dabe76554a1e06d3d7b349e5b1605d6";
   }
 
 
@@ -340,16 +340,8 @@ public class PortfolioManagerApplication {
     ThreadContext.put("runId", UUID.randomUUID().toString());
 
     printJsonObject(mainReadFile(args));
-
-
     printJsonObject(mainReadQuotes(args));
-
-
-
     printJsonObject(mainCalculateSingleReturn(args));
-
-
-
     printJsonObject(mainCalculateReturnsAfterRefactor(args));
   }
 }
