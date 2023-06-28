@@ -16,7 +16,8 @@ public class AlphavantageDailyResponse {
     return candles;
   }
 
-  public void setCandles(Map<LocalDate, AlphavantageCandle> candles) {
+  public void setCandles(
+      Map<LocalDate, AlphavantageCandle> candles) {
     this.candles = candles;
   }
 }

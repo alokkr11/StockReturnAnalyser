@@ -12,7 +12,7 @@ public class PortfolioManagerFactory {
 
   public static PortfolioManager getPortfolioManager(RestTemplate restTemplate) {
 
-    return new PortfolioManagerImpl();
+    return new PortfolioManagerImpl(restTemplate);
   }
 
 

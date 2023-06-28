@@ -3,10 +3,12 @@ package com.crio.warmup.stock.quotes;
 
 import com.crio.warmup.stock.dto.Candle;
 import com.crio.warmup.stock.dto.TiingoCandle;
+import com.crio.warmup.stock.exception.StockQuoteServiceException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -23,14 +25,17 @@ public class TiingoService implements StockQuotesService {
 
   @Override
   public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to)
-      throws JsonProcessingException {
-
-    String uri = buildUri(symbol, from, to);
-    String str = restTemplate.getForObject(uri, String.class);
-    ObjectMapper objectMapper = getObjectMapper();
-    Candle[] candles = objectMapper.readValue(str, TiingoCandle[].class);
-    List<Candle> candleList = Arrays.asList(candles);
-
+      throws JsonProcessingException, StockQuoteServiceException {
+    List<Candle> candleList = new ArrayList<>();
+    try {
+      String uri = buildUri(symbol, from, to);
+      String str = restTemplate.getForObject(uri, String.class);
+      ObjectMapper objectMapper = getObjectMapper();
+      Candle[] candles = objectMapper.readValue(str, TiingoCandle[].class);
+      candleList = Arrays.asList(candles);
+    } catch (RuntimeException re) {
+      throw new StockQuoteServiceException("API Limit Exceeded!!");
+    }
     Collections.sort(candleList, getComparator());
 
     return candleList;
@@ -69,5 +74,19 @@ public class TiingoService implements StockQuotesService {
   public static String getToken() {
     return "837ccaae4dabe76554a1e06d3d7b349e5b1605d6";
   }
+
+
+
+  // TODO: CRIO_TASK_MODULE_EXCEPTIONS
+  // 1. Update the method signature to match the signature change in the interface.
+  // Start throwing new StockQuoteServiceException when you get some invalid response from
+  // Tiingo, or if Tiingo returns empty results for whatever reason, or you encounter
+  // a runtime exception during Json parsing.
+  // 2. Make sure that the exception propagates all the way from
+  // PortfolioManager#calculateAnnualisedReturns so that the external user's of our API
+  // are able to explicitly handle this exception upfront.
+
+  // CHECKSTYLE:OFF
+
 
 }

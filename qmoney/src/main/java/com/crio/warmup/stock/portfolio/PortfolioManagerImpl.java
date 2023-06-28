@@ -5,6 +5,7 @@ import com.crio.warmup.stock.dto.AnnualizedReturn;
 import com.crio.warmup.stock.dto.Candle;
 import com.crio.warmup.stock.dto.PortfolioTrade;
 import com.crio.warmup.stock.dto.TiingoCandle;
+import com.crio.warmup.stock.exception.StockQuoteServiceException;
 import com.crio.warmup.stock.quotes.StockQuotesService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.LocalDate;
@@ -84,24 +85,34 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
   @Override
   public List<AnnualizedReturn> calculateAnnualizedReturn(List<PortfolioTrade> portfolioTrades,
-      LocalDate endDate) throws JsonProcessingException {
+      LocalDate endDate) throws StockQuoteServiceException {
     // TODO Auto-generated method stub
 
     List<AnnualizedReturn> annualizedReturnsList = new ArrayList<>();
 
     for (PortfolioTrade portfolioTrade : portfolioTrades) {
 
-      List<Candle> candlesList = stockQuotesService.getStockQuote(portfolioTrade.getSymbol(),
-          portfolioTrade.getPurchaseDate(), endDate);
-      if (candlesList != null) {
-        Double buyPrice = candlesList.get(0).getOpen();
-        Double sellPrice = candlesList.get(candlesList.size() - 1).getClose();
-        LocalDate sellDate = candlesList.get(candlesList.size() - 1).getDate();
+      List<Candle> candlesList = new ArrayList<>();
 
-        annualizedReturnsList
-            .add(calculateAnnualizedReturns(sellDate, portfolioTrade, buyPrice, sellPrice));
+
+      try {
+        candlesList = stockQuotesService.getStockQuote(portfolioTrade.getSymbol(),
+            portfolioTrade.getPurchaseDate(), endDate);
+        // TODO Auto-generated catch block
+
+        if(!candlesList.isEmpty()){
+          Double buyPrice = candlesList.get(0).getOpen();
+          Double sellPrice = candlesList.get(candlesList.size() - 1).getClose();
+          LocalDate sellDate = candlesList.get(candlesList.size() - 1).getDate();
+          annualizedReturnsList
+              .add(calculateAnnualizedReturns(sellDate, portfolioTrade, buyPrice, sellPrice));
+        }
+        
+
+      } catch (JsonProcessingException e) {
+        // TODO Auto-generated catch block
+        throw new StockQuoteServiceException("rate limit exceed!!");
       }
-
 
     }
 
@@ -110,7 +121,7 @@ public class PortfolioManagerImpl implements PortfolioManager {
   }
 
   public static AnnualizedReturn calculateAnnualizedReturns(LocalDate endDate, PortfolioTrade trade,
-      Double buyPrice, Double sellPrice) {
+      Double buyPrice, Double sellPrice) throws JsonProcessingException {
 
     Double totalReturn = (sellPrice - buyPrice) / buyPrice;
     Double years = ChronoUnit.DAYS.between(trade.getPurchaseDate(), endDate) / 365d;
