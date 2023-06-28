@@ -142,7 +142,8 @@ public class PortfolioManagerImpl implements PortfolioManager {
   }
 
   public static String getToken() {
-    return "837ccaae4dabe76554a1e06d3d7b349e5b1605d6";
+    return "0597d56bf57ee8196f6f36f47a1849e078da82cc";
+    // return "837ccaae4dabe76554a1e06d3d7b349e5b1605d6";
   }
 
 
