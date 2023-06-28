@@ -3,6 +3,9 @@ package com.crio.warmup.stock.quotes;
 
 
 import com.crio.warmup.stock.dto.AlphavantageCandle;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.SECONDS;
+
 import com.crio.warmup.stock.dto.AlphavantageDailyResponse;
 import com.crio.warmup.stock.dto.Candle;
 import com.crio.warmup.stock.exception.StockQuoteServiceException;

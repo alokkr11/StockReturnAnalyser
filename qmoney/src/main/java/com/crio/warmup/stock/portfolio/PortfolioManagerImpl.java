@@ -1,6 +1,9 @@
 
 package com.crio.warmup.stock.portfolio;
 
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.SECONDS;
+
 import com.crio.warmup.stock.dto.AnnualizedReturn;
 import com.crio.warmup.stock.dto.Candle;
 import com.crio.warmup.stock.dto.PortfolioTrade;
@@ -8,6 +11,8 @@ import com.crio.warmup.stock.dto.TiingoCandle;
 import com.crio.warmup.stock.exception.StockQuoteServiceException;
 import com.crio.warmup.stock.quotes.StockQuotesService;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -15,6 +20,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.springframework.web.client.RestTemplate;
 
 public class PortfolioManagerImpl implements PortfolioManager {
@@ -100,14 +112,14 @@ public class PortfolioManagerImpl implements PortfolioManager {
             portfolioTrade.getPurchaseDate(), endDate);
         // TODO Auto-generated catch block
 
-        if(!candlesList.isEmpty()){
+        if (!candlesList.isEmpty()) {
           Double buyPrice = candlesList.get(0).getOpen();
           Double sellPrice = candlesList.get(candlesList.size() - 1).getClose();
           LocalDate sellDate = candlesList.get(candlesList.size() - 1).getDate();
           annualizedReturnsList
               .add(calculateAnnualizedReturns(sellDate, portfolioTrade, buyPrice, sellPrice));
         }
-        
+
 
       } catch (JsonProcessingException e) {
         // TODO Auto-generated catch block
@@ -131,6 +143,60 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
   public static String getToken() {
     return "837ccaae4dabe76554a1e06d3d7b349e5b1605d6";
+  }
+
+
+  @Override
+  public List<AnnualizedReturn> calculateAnnualizedReturnParallel(
+      List<PortfolioTrade> portfolioTrades, LocalDate endDate, int numThreads)
+      throws InterruptedException, StockQuoteServiceException {
+    ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+
+    List<Future<AnnualizedReturn>> futureList = new ArrayList<>();
+
+
+    for (int i = 0; i < numThreads && i < portfolioTrades.size(); i++) {
+      Callable<AnnualizedReturn> task = new TaskCallable(endDate, portfolioTrades.get(i));
+      Future<AnnualizedReturn> future = executor.submit(task);
+      futureList.add(future);
+    }
+
+    // Collect the results from the futures
+    List<AnnualizedReturn> results = new ArrayList<>();
+    for (Future<AnnualizedReturn> future : futureList) {
+      try {
+        AnnualizedReturn annualizedReturn = future.get();
+        results.add(annualizedReturn);
+      } catch (InterruptedException | ExecutionException e) {
+        throw new StockQuoteServiceException("Rate limit exceeded!!");
+      }
+    }
+    executor.shutdown();
+    Collections.sort(results, getComparator());
+    return results;
+  }
+
+  class TaskCallable implements Callable<AnnualizedReturn> {
+    PortfolioTrade trades;
+    LocalDate endDate;
+
+
+    public TaskCallable(LocalDate endDate, PortfolioTrade trades) {
+      this.endDate = endDate;
+      this.trades = trades;
+    }
+
+    @Override
+    public AnnualizedReturn call() throws Exception {
+      List<Candle> candles =
+          stockQuotesService.getStockQuote(trades.getSymbol(), trades.getPurchaseDate(), endDate);
+      // if(candles != null){
+      Candle tiingoCandle = candles.get(0);
+      Candle tiingoCandlelast = candles.get(candles.size() - 1);
+      AnnualizedReturn annualizedReturn = calculateAnnualizedReturns(tiingoCandlelast.getDate(),
+          trades, tiingoCandle.getOpen(), tiingoCandlelast.getClose());
+      return annualizedReturn;
+    }
   }
 
 
